@@ -82,6 +82,17 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// 전체 헤더 디버깅 (임시)
+app.use((req, res, next) => {
+  console.log('=== 모든 요청 헤더 디버깅 ===');
+  console.log('URL:', req.url);
+  console.log('Method:', req.method);
+  console.log('All Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Cookie Header:', req.headers.cookie);
+  console.log('============================');
+  next();
+});
+
 // 세션 설정
 // const FileStoreSession = FileStore(session);
 app.use(
