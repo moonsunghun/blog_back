@@ -106,10 +106,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true, // 유효한 SSL이므로 true로 변경
+      secure: false, // 자체 서명 인증서로 인해 false로 변경
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: 'none', // 크로스 도메인 HTTPS용
+      sameSite: 'lax', // none에서 lax로 변경하여 쿠키 저장 허용
     },
   }) as any
 );
