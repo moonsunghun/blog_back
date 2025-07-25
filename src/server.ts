@@ -106,10 +106,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true,
+      secure: false, // HTTP에서도 작동하도록 변ㄷ
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: 'none',
+      sameSite: 'lax', // 크로스 도메인 제한 완화
     },
   }) as any
 );
