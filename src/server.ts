@@ -82,26 +82,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 요청 헤더 디버깅 (임시)
-app.use((req, res, next) => {
-  if (req.path.includes('/api/authentication/roles')) {
-    console.log('=== ROLES 요청 디버깅 ===');
-    console.log('Cookie 헤더:', req.headers.cookie);
-    console.log('Session ID:', req.sessionID);
-    console.log('Session 데이터:', req.session);
-    console.log('========================');
-  }
-  next();
-});
-
 // 세션 설정
-const FileStoreSession = FileStore(session);
+// const FileStoreSession = FileStore(session);
 app.use(
   session({
-    store: new FileStoreSession({
-      path: '/home/ubuntu/blog_back/sessions', // 절대 경로로 변경
-      ttl: 86400,
-    }),
+    // store: new FileStoreSession({
+    //   path: '/home/ubuntu/blog_back/sessions', // 절대 경로로 변경
+    //   ttl: 86400,
+    // }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
