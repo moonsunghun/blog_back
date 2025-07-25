@@ -72,7 +72,7 @@ app.use(
     origin:
       process.env.FRONTEND_URL ||
       (process.env.NODE_ENV === 'production'
-        ? ['https://your-app.vercel.app']
+        ? ['https://frontend-lac-iota-10.vercel.app']
         : ['http://localhost:3000']),
     credentials: true,
   })
