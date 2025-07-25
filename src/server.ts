@@ -106,10 +106,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // HTTP에서도 작동하도록 변
+      secure: true, // 유효한 SSL이므로 true로 변경
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: 'lax', // 크로스 도메인 제한 완화
+      sameSite: 'none', // 크로스 도메인 HTTPS용
     },
   }) as any
 );
