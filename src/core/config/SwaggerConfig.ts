@@ -1,7 +1,7 @@
 import { SwaggerConfigOptions } from '../types/Type';
 import { Express } from 'express';
-import swaggerJSDoc, { Options } from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
+// import swaggerJSDoc, { Options } from 'swagger-jsdoc';
+// import swaggerUi from 'swagger-ui-express';
 import path from 'node:path';
 
 /**
@@ -54,7 +54,7 @@ export const generateSwaggerSpec = (
     path.resolve(__dirname, '../constant/**/*.ts'),
   ];
 
-  const swaggerOptions: Options = {
+  const swaggerOptions: any = {
     definition: {
       openapi: '3.0.0',
       info: { title, version, description },
@@ -100,8 +100,8 @@ export const generateSwaggerSpec = (
     apis: combinedApiFiles,
   };
 
-  const swaggerSpec = swaggerJSDoc(swaggerOptions);
+  // const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
   // Swagger UI 라우팅 등록
-  // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // app.use('/api-docs', swaggerUi.serve as any, (swaggerUi.setup(swaggerSpec) as any));
 };
