@@ -99,14 +99,14 @@ const FileStoreSession = FileStore(session);
 app.use(
   session({
     store: new FileStoreSession({
-      path: './sessions',
+      path: '/home/ubuntu/blog_back/sessions', // 절대 경로로 변경
       ttl: 86400,
     }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // HTTP에서도 작동하도록 변ㄷ
+      secure: false, // HTTP에서도 작동하도록 변
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
       sameSite: 'lax', // 크로스 도메인 제한 완화
