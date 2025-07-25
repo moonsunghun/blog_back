@@ -35,7 +35,10 @@ import path from 'node:path';
  *   ]
  * });
  */
-export const generateSwaggerSpec = (app: Express, options: SwaggerConfigOptions) => {
+export const generateSwaggerSpec = (
+  app: Express,
+  options: SwaggerConfigOptions
+) => {
   const {
     title = '개발새발 404 Found API',
     version,
@@ -46,7 +49,10 @@ export const generateSwaggerSpec = (app: Express, options: SwaggerConfigOptions)
   } = options;
 
   // 상수 등 공통 경로 포함
-  const combinedApiFiles = [...apiFiles, path.resolve(__dirname, '../constant/**/*.ts')];
+  const combinedApiFiles = [
+    ...apiFiles,
+    path.resolve(__dirname, '../constant/**/*.ts'),
+  ];
 
   const swaggerOptions: Options = {
     definition: {
@@ -97,5 +103,5 @@ export const generateSwaggerSpec = (app: Express, options: SwaggerConfigOptions)
   const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
   // Swagger UI 라우팅 등록
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };

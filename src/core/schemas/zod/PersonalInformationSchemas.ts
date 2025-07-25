@@ -16,10 +16,10 @@ export const PersonalInformationSchema = z.object({
       },
       { message: '유효한 생년월일을 입력해주세요.' }
     ),
-  gender: z.enum([PersonalInformationGender.MALE, PersonalInformationGender.FEMALE], {
-    required_error: '성별은 필수값입니다.',
-    invalid_type_error: '성별이 올바르지 않습니다.',
-  }),
+  gender: z.enum(
+    [PersonalInformationGender.MALE, PersonalInformationGender.FEMALE],
+    {}
+  ),
   address: z
     .string()
     .min(1, { message: '주소는 최소 1자리 이상이어야 합니다.' })
@@ -35,7 +35,8 @@ export const PersonalInformationSchema = z.object({
     .refine(
       (phone) => {
         // 한국 전화번호 형식 검증 (010-1234-5678, 02-123-4567, 031-123-4567 등)
-        const phoneRegex = /^(01[016789]|02|0[3-9]{1}[0-9]{1})-?[0-9]{3,4}-?[0-9]{4}$/;
+        const phoneRegex =
+          /^(01[016789]|02|0[3-9]{1}[0-9]{1})-?[0-9]{3,4}-?[0-9]{4}$/;
         return phoneRegex.test(phone);
       },
       { message: '올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)' }

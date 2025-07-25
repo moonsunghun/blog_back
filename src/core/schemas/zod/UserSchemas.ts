@@ -16,7 +16,9 @@ export const nickNameUpdateSchema = z.object({
     .string()
     .min(2, { message: '별명은 2자 이상이어야 합니다.' })
     .max(10, { message: '별명은 10자 이하이어야 합니다.' })
-    .regex(/^[가-힣a-zA-Z0-9]+$/, { message: '별명은 한글, 영어, 숫자만 사용할 수 있습니다.' }),
+    .regex(/^[가-힣a-zA-Z0-9]+$/, {
+      message: '별명은 한글, 영어, 숫자만 사용할 수 있습니다.',
+    }),
 });
 
 /**
@@ -65,13 +67,13 @@ export const userListSearchSchema = z.object({
     .regex(/^[0-9]+$/)
     .transform(Number)
     .optional()
-    .default('1'),
+    .default(1),
   perPageSize: z
     .string()
     .regex(/^[0-9]+$/)
     .transform(Number)
     .optional()
-    .default('10'),
+    .default(10),
   orderBy: z.enum(['ASC', 'DESC']).optional().default('DESC'),
   orderColumn: z
     .enum(['email', 'nickName', 'blockState', 'createDateTime'])

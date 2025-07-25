@@ -54,4 +54,4 @@ export const sessionMiddleware: RequestHandler = session({
     secure: process.env.NODE_ENV !== 'production' ? false : true,
     sameSite: 'lax',
   },
-});
+}) as any;

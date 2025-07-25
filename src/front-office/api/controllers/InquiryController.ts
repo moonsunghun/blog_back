@@ -1,6 +1,5 @@
 import { Request, Response, Router } from 'express';
 import { DefaultResponse } from '../../../core/constant/DefaultResponse';
-import { fileUploadMiddleware } from '../../../core/middlewares/FileUploadMiddleware';
 import { commonExceptionControllerResponseProcessor } from '../../../core/processor/CommonExceptionControllerResponseProcessor';
 import { InquiryService } from '../../../core/api/services/inquiry/InquiryService';
 import { InquiryCreateRequestDto } from '../../../core/models/dtos/request/inquiry/InquiryCreateRequestDto';
@@ -34,7 +33,6 @@ export class InquiryController {
   private initializeRoutes() {
     this.router.post(
       '/inquiries',
-      fileUploadMiddleware.array('files', 10),
       authenticationCheckForUserOfGuest,
       validateRequest({
         body: inquiryCreateSchema,
@@ -44,7 +42,6 @@ export class InquiryController {
 
     this.router.patch(
       '/inquiries/:inquiryId',
-      fileUploadMiddleware.array('files', 10),
       authenticationCheckForUserOfGuest,
       validateRequest({
         params: inquiryIdSchema,
@@ -150,16 +147,22 @@ export class InquiryController {
       const files = (request.files ?? []) as Express.Multer.File[];
 
       const result: DefaultResponse<InquiryCreateResponseDto> =
-        await this.inquiryService.createInquiry(inquiryCreatedRequestDto, files);
+        await this.inquiryService.createInquiry(
+          inquiryCreatedRequestDto,
+          files
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `문의 게시글 작성 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `문의 게시글 작성 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -252,16 +255,23 @@ export class InquiryController {
       const files = (request.files ?? []) as Express.Multer.File[];
 
       const result: DefaultResponse<InquiryUpdateResponseDto> =
-        await this.inquiryService.updateInquiry(request, inquiryUpdateRequestDto, files);
+        await this.inquiryService.updateInquiry(
+          request,
+          inquiryUpdateRequestDto,
+          files
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `문의 게시글 수정 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `문의 게시글 수정 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -326,16 +336,22 @@ export class InquiryController {
       const result: DefaultResponse<{
         id: number;
         deleteByInquiryFile: { ids: number[] };
-      }> = await this.inquiryService.deleteInquiry(request, Number(request.params.inquiryId));
+      }> = await this.inquiryService.deleteInquiry(
+        request,
+        Number(request.params.inquiryId)
+      );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        '문의 게시글 삭제 실패'
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          '문의 게시글 삭제 실패'
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 }

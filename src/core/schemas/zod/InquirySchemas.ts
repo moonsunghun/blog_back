@@ -46,7 +46,12 @@ export const inquirySearchRequestSchema = pageRequestSchema.extend({
 
   title: z.preprocess(
     (value) => (value === '' ? undefined : value),
-    z.string().min(2).describe('검색할 제목은 최소 2자리 이상이어야 합니다.').nullable().optional()
+    z
+      .string()
+      .min(2)
+      .describe('검색할 제목은 최소 2자리 이상이어야 합니다.')
+      .nullable()
+      .optional()
   ),
 
   answerStatus: z
@@ -71,22 +76,26 @@ export const validateGuestPasswordSchema = z.object({
     .default(false),
 });
 
-export const detailSearchInquiryProcessTypeSchema = validateGuestPasswordSchema.extend({
-  processType: z
-    .preprocess((value) => {
-      if (typeof value === 'string') {
-        return value === 'true';
-      }
-      return value;
-    }, z.boolean())
-    .nullable()
-    .optional()
-    .default(false),
-});
+export const detailSearchInquiryProcessTypeSchema =
+  validateGuestPasswordSchema.extend({
+    processType: z
+      .preprocess((value) => {
+        if (typeof value === 'string') {
+          return value === 'true';
+        }
+        return value;
+      }, z.boolean())
+      .nullable()
+      .optional()
+      .default(false),
+  });
 
 export const guestPasswordSchema = z.object({
   guestPassword: z
-    .union([z.string().length(4, { message: '비밀번호는 4자리여야 합니다.' }), z.null()])
+    .union([
+      z.string().length(4, { message: '비밀번호는 4자리여야 합니다.' }),
+      z.null(),
+    ])
     .optional(),
 });
 
@@ -96,10 +105,11 @@ export const inquiryCreateSchema = guestPasswordSchema.extend({
     .min(4, { message: '컨텐츠 형식은 4자리 이상이어야 합니다.' })
     .max(10, { message: '컨텐츠 형식은 9자리 이하여야 합니다.' }),
 
-  category: z.enum([InquiryCategory.TECH, InquiryCategory.REPORT, InquiryCategory.ETC], {
-    required_error: '문의 유형은 필수값입니다.',
-    invalid_type_error: '문의 유형이 올바르지 않습니다.',
-  }),
+  category: z.enum([
+    InquiryCategory.TECH,
+    InquiryCategory.REPORT,
+    InquiryCategory.ETC,
+  ]),
 
   title: z
     .string()
@@ -118,10 +128,11 @@ export const inquiryUpdateSchema = z.object({
     .min(4, { message: '컨텐츠 형식은 4자리 이상이어야 합니다.' })
     .max(10, { message: '컨텐츠 형식은 9자리 이하여야 합니다.' }),
 
-  category: z.enum([InquiryCategory.TECH, InquiryCategory.REPORT, InquiryCategory.ETC], {
-    required_error: '문의 유형은 필수값입니다.',
-    invalid_type_error: '문의 유형이 올바르지 않습니다.',
-  }),
+  category: z.enum([
+    InquiryCategory.TECH,
+    InquiryCategory.REPORT,
+    InquiryCategory.ETC,
+  ]),
 
   title: z
     .string()
@@ -141,11 +152,12 @@ export const inquiryCommentSchema = z.object({
     .max(100, { message: '댓글은 100자 이하여야 합니다.' }),
 });
 
-export const inquiryCommentParamRequestSchema = inquiryIdSchema.merge(inquiryCommentIdSchema);
-
-export const inquiryCommentReplyParamRequestSchema = inquiryCommentIdSchema.merge(
-  inquiryCommentReplyIdSchema
+export const inquiryCommentParamRequestSchema = inquiryIdSchema.merge(
+  inquiryCommentIdSchema
 );
+
+export const inquiryCommentReplyParamRequestSchema =
+  inquiryCommentIdSchema.merge(inquiryCommentReplyIdSchema);
 
 export const inquiryCommentSearchListRequestSchema =
   inquiryCommentIdSchema.merge(pageRequestSchema);

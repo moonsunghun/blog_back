@@ -16,8 +16,8 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import FileStore from 'session-file-store';
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
+// import swaggerUi from 'swagger-ui-express';
+// import swaggerJsdoc from 'swagger-jsdoc';
 import dotenv from 'dotenv';
 import 'reflect-metadata';
 
@@ -98,33 +98,33 @@ app.use(
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
     },
-  })
+  }) as any
 );
 
 // 커스텀 미들웨어
 app.use(requestLogger);
 
 // Swagger 설정
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: '404-Found API',
-      version: '1.0.0',
-      description: '통합 백엔드 API 문서',
-    },
-    servers: [
-      {
-        url: `http://localhost:${PORT}`,
-        description: '개발 서버',
-      },
-    ],
-  },
-  apis: ['./src/**/*.ts'],
-};
-
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// const swaggerOptions = {
+//   definition: {
+//     openapi: '3.0.0',
+//     info: {
+//       title: '404-Found API',
+//       version: '1.0.0',
+//       description: '통합 백엔드 API 문서',
+//     },
+//     servers: [
+//       {
+//         url: `http://localhost:${PORT}`,
+//         description: '개발 서버',
+//       },
+//     ],
+//   },
+//   apis: ['./src/**/*.ts'],
+// };
+//
+// const swaggerSpec = swaggerJsdoc(swaggerOptions);
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 헬스 체크
 app.get('/health', (req, res) => {
@@ -139,7 +139,10 @@ app.use(morganMiddleware);
 
 /////////////////////// COMMON API ///////////////////////
 // 인증 관련
-app.use(SERVER_URI_PREFIX + '/authentication', new AuthenticateController().router);
+app.use(
+  SERVER_URI_PREFIX + '/authentication',
+  new AuthenticateController().router
+);
 
 // 회원 마이페이지
 app.use(SERVER_URI_PREFIX + '/users', new UserMyPageController().router);

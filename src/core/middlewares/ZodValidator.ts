@@ -56,7 +56,7 @@ export const validateRequest = (schema: SchemaGroup) => {
           throw new ZodValidationError(formatZodError('params', result.error));
         }
 
-        request.params = result.data;
+        request.params = result.data as any;
       }
 
       if (schema.query) {
@@ -66,7 +66,7 @@ export const validateRequest = (schema: SchemaGroup) => {
           throw new ZodValidationError(formatZodError('query', result.error));
         }
 
-        request.query = result.data;
+        request.query = result.data as any;
       }
 
       if (schema.body) {
@@ -76,7 +76,7 @@ export const validateRequest = (schema: SchemaGroup) => {
           throw new ZodValidationError(formatZodError('body', result.error));
         }
 
-        request.body = result.data;
+        request.body = result.data as any;
       }
 
       nextFunction();
@@ -96,8 +96,8 @@ export const validateRequest = (schema: SchemaGroup) => {
   function formatZodError(target: HttpRequestType, error: ZodError): string {
     return (
       `[${target}] ` +
-      error.errors
-        .map((e) => {
+      error.issues
+        .map((e: any) => {
           const path = e.path.join('.') || '(root)';
           return `${path}: ${e.message}`;
         })
