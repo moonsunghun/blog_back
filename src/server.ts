@@ -82,6 +82,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// 요청 헤더 디버깅 (임시)
+app.use((req, res, next) => {
+  if (req.path.includes('/api/authentication/roles')) {
+    console.log('=== ROLES 요청 디버깅 ===');
+    console.log('Cookie 헤더:', req.headers.cookie);
+    console.log('Session ID:', req.sessionID);
+    console.log('Session 데이터:', req.session);
+    console.log('========================');
+  }
+  next();
+});
+
 // 세션 설정
 const FileStoreSession = FileStore(session);
 app.use(
@@ -94,10 +106,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,
+      secure: true,
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24시간,
-      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24시간
+      sameSite: 'none',
     },
   }) as any
 );
