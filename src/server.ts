@@ -108,7 +108,7 @@ app.use(
       secure: true, // HTTPS 환경이므로 true로 설정
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: 'none', // 크로스 도메인을 위해 none으로 설정
+      sameSite: 'lax', // 브라우저 호환성을 위해 lax로 변경
       // domain 설정 제거 - Vercel 도메인과 호환되지 않음
     },
   }) as any
