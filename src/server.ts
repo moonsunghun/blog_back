@@ -109,7 +109,7 @@ app.use(
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
       sameSite: 'none', // 크로스 도메인을 위해 none으로 설정
-      // domain 설정은 일단 제외 (문제 발생 시 추가)
+      domain: '.shmoon.site', // 도메인 설정 추가
     },
   }) as any
 );
