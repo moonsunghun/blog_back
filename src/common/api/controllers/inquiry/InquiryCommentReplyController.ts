@@ -82,7 +82,7 @@ export class InquiryCommentReplyController {
    *     tags:
    *       - Inquiries Comment Replies (문의 댓글 답글)
    *     security:
-   *       - sessionCookie: []
+   *       - bearerAuth: []
    *     parameters:
    *       - name: inquiryCommentId
    *         in: path
@@ -121,12 +121,19 @@ export class InquiryCommentReplyController {
    *       500:
    *         description: 서버 내부 오류
    */
-  private async createInquiryCommentReply(request: Request, response: Response) {
+  private async createInquiryCommentReply(
+    request: Request,
+    response: Response
+  ) {
     try {
-      if (!(await this.inquiryService.checkAuthorization(request, JobType.CREATE))) {
+      if (
+        !(await this.inquiryService.checkAuthorization(request, JobType.CREATE))
+      ) {
         logger.error(`접근 권한 없는 접근 발생`);
 
-        return Promise.reject(new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능'));
+        return Promise.reject(
+          new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능')
+        );
       }
 
       const inquiryId: number = Number(request.params.inquiryId);
@@ -146,12 +153,15 @@ export class InquiryCommentReplyController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        '서버 내부 오류: 문의 게시글에 대한 댓글의 답글 작성 실패'
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          '서버 내부 오류: 문의 게시글에 대한 댓글의 답글 작성 실패'
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -164,7 +174,7 @@ export class InquiryCommentReplyController {
    *     tags:
    *       - Inquiries Comment Replies (문의 댓글 답글)
    *     security:
-   *       - sessionCookie: []
+   *       - bearerAuth: []
    *     parameters:
    *       - name: inquiryCommentId
    *         in: path
@@ -208,7 +218,10 @@ export class InquiryCommentReplyController {
    *       500:
    *         description: 서버 내부 오류
    */
-  private async inquiryCommentReplySearchListWithPaging(request: Request, response: Response) {
+  private async inquiryCommentReplySearchListWithPaging(
+    request: Request,
+    response: Response
+  ) {
     try {
       const inquiryCommentReplyListRequestDto: InquiryCommentReplyListRequestDto =
         new InquiryCommentReplyListRequestDto({
@@ -225,12 +238,15 @@ export class InquiryCommentReplyController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `서버 내부 오류: ${request.params.inquiryCommentId} 문의 게시글의 댓글 답글 목록 조회 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `서버 내부 오류: ${request.params.inquiryCommentId} 문의 게시글의 댓글 답글 목록 조회 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -246,7 +262,7 @@ export class InquiryCommentReplyController {
    *     tags:
    *       - Inquiry Comment Reply (문의 답글)
    *     security:
-   *       - sessionCookie: []  # 회원 세션 인증용
+   *       - bearerAuth: []  # 회원 JWT 인증용
    *     parameters:
    *       - name: inquiryId
    *         in: path
@@ -306,19 +322,27 @@ export class InquiryCommentReplyController {
    *       500:
    *         description: 서버 내부 오류
    */
-  private async inquiryCommentReplyUpdate(request: Request, response: Response) {
+  private async inquiryCommentReplyUpdate(
+    request: Request,
+    response: Response
+  ) {
     try {
-      if (!(await this.inquiryService.checkAuthorization(request, JobType.UPDATE))) {
+      if (
+        !(await this.inquiryService.checkAuthorization(request, JobType.UPDATE))
+      ) {
         logger.error(`접근 권한 없는 접근 발생`);
 
-        return Promise.reject(new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능'));
+        return Promise.reject(
+          new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능')
+        );
       }
 
-      const inquiryCommentReplyUpdateRequestDto = new InquiryCommentReplyUpdateDto({
-        inquiryCommentId: Number(request.params.inquiryCommentId),
-        inquiryCommentReplyId: Number(request.params.inquiryCommentReplyId),
-        content: request.body.content,
-      });
+      const inquiryCommentReplyUpdateRequestDto =
+        new InquiryCommentReplyUpdateDto({
+          inquiryCommentId: Number(request.params.inquiryCommentId),
+          inquiryCommentReplyId: Number(request.params.inquiryCommentReplyId),
+          content: request.body.content,
+        });
 
       const result: DefaultResponse<number> =
         await this.inquiryCommentReplyService.inquiryCommentReplyUpdate(
@@ -328,12 +352,15 @@ export class InquiryCommentReplyController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `서버 내부 오류: 답글 수정 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `서버 내부 오류: 답글 수정 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -349,7 +376,7 @@ export class InquiryCommentReplyController {
    *     tags:
    *       - Inquiry Comment Reply (문의 답글)
    *     security:
-   *       - sessionCookie: []  # 세션 기반 인증 (회원 전용)
+   *       - bearerAuth: []  # JWT 기반 인증 (회원 전용)
    *     parameters:
    *       - name: inquiryId
    *         in: path
@@ -396,18 +423,26 @@ export class InquiryCommentReplyController {
    *       500:
    *         description: 서버 내부 오류
    */
-  private async inquiryCommentReplyDelete(request: Request, response: Response) {
+  private async inquiryCommentReplyDelete(
+    request: Request,
+    response: Response
+  ) {
     try {
-      if (!(await this.inquiryService.checkAuthorization(request, JobType.DELETE))) {
+      if (
+        !(await this.inquiryService.checkAuthorization(request, JobType.DELETE))
+      ) {
         logger.error(`접근 권한 없는 접근 발생`);
 
-        return Promise.reject(new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능'));
+        return Promise.reject(
+          new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능')
+        );
       }
 
-      const inquiryCommentReplyDeleteRequestDto = new InquiryCommentReplyDeleteRequestDto({
-        inquiryCommentId: Number(request.params.inquiryCommentId),
-        inquiryCommentReplyId: Number(request.params.inquiryCommentReplyId),
-      });
+      const inquiryCommentReplyDeleteRequestDto =
+        new InquiryCommentReplyDeleteRequestDto({
+          inquiryCommentId: Number(request.params.inquiryCommentId),
+          inquiryCommentReplyId: Number(request.params.inquiryCommentReplyId),
+        });
 
       const result: DefaultResponse<number> =
         await this.inquiryCommentReplyService.inquiryCommentReplyDelete(
@@ -417,12 +452,15 @@ export class InquiryCommentReplyController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `서버 내부 오류: 답글 삭제 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `서버 내부 오류: 답글 삭제 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 }

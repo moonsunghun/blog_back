@@ -14,10 +14,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import session from 'express-session';
-import FileStore from 'session-file-store';
-// import swaggerUi from 'swagger-ui-express';
-// import swaggerJsdoc from 'swagger-jsdoc';
 import dotenv from 'dotenv';
 import 'reflect-metadata';
 
@@ -31,6 +27,7 @@ import { AppDataSource } from './core/config/DatabaseConfig';
 import { errorHandler } from './shared/middlewares/ErrorHandler';
 import { requestLogger } from './shared/middlewares/RequestLogger';
 import { morganMiddleware } from './core/middlewares/MorganMiddleware';
+import { authenticateJwt } from './core/middlewares/JwtAuthenticationMiddleware';
 
 // COMMON 서비스 컨트롤러들
 import { BlogCommentReplyController } from './common/api/controllers/blog/BlogCommentReplyController';
@@ -93,26 +90,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// 세션 설정
-// const FileStoreSession = FileStore(session);
-app.use(
-  session({
-    // store: new FileStoreSession({
-    //   path: '/home/ubuntu/blog_back/sessions', // 절대 경로로 변경
-    //   ttl: 86400,
-    // }),
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: true, // HTTPS 환경이므로 true로 설정
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: 'lax', // 브라우저 호환성을 위해 lax로 변경
-      // domain 설정 제거 - Vercel 도메인과 호환되지 않음
-    },
-  }) as any
-);
+// JWT 인증 미들웨어 (모든 요청에 대해 토큰 검증)
+app.use(authenticateJwt);
 
 // 커스텀 미들웨어
 app.use(requestLogger);

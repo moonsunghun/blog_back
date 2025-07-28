@@ -7,22 +7,9 @@ import { HttpExceptionResponse } from '../../exception/HttpExceptionResponse';
 import { UserRepository } from '../../repositories/user/UserRepository';
 import { UserRepositoryImpl } from '../../repositories/implements/user/UserRepositoryImpl';
 import { checkPassword } from '../../../utilities/Checker';
-import { encryptUserId } from '../../../utilities/Encyprter';
 import { logger } from '../../../utilities/Logger';
-import process from 'node:process';
-import { UserRole } from '../../../types/Enum'; // enum import 필요
-
-// Express Session 확장 인터페이스
-interface ExtendedSessionData {
-  encryptedUserId?: string;
-  rememberMeStatus?: boolean;
-  user?: {
-    id: number;
-    username: string;
-    nickname: string;
-    role: UserRole;
-  };
-}
+import { UserRole } from '../../../types/Enum';
+import { generateJwtToken } from '../../../utilities/JwtUtils';
 
 export class AuthenticateService {
   private readonly userRepository: UserRepository = new UserRepositoryImpl();
@@ -67,25 +54,22 @@ export class AuthenticateService {
   /**
    * 사용자의 로그인 요청을 처리합니다.
    *
-   * 이메일과 비밀번호를 검증한 후, 세션에 암호화된 사용자 고유 ID를 저장합니다.
-   * 'rememberMe' 설정 여부에 따라 세션 유지 시간을 달리 설정하며,
-   * 세션 저장에 실패할 경우 에러를 반환합니다.
+   * 이메일과 비밀번호를 검증한 후, JWT 토큰을 생성하여 반환합니다.
+   * 'rememberMe' 설정 여부에 따라 토큰 만료 시간을 달리 설정합니다.
    *
-   * @param {Request} request - Express 요청 객체 (세션 포함)
    * @param {string} email - 사용자가 입력한 이메일
    * @param {string} password - 사용자가 입력한 비밀번호
    * @param {boolean} rememberMeStatus - '자동 로그인' 여부
    *
-   * @returns {Promise<DefaultResponse<void>>} 로그인 성공 여부를 나타내는 응답
+   * @returns {Promise<DefaultResponse<{token: string}>>} 로그인 성공 여부와 JWT 토큰을 포함한 응답
    *
-   * @throws {HttpExceptionResponse} 이메일, 비밀번호 오류 또는 세션 저장 실패 시
+   * @throws {HttpExceptionResponse} 이메일, 비밀번호 오류 시
    */
   async login(
-    request: Request,
     email: string,
     password: string,
     rememberMeStatus: boolean
-  ): Promise<DefaultResponse<void>> {
+  ): Promise<DefaultResponse<{ token: string }>> {
     if (!email || !password) {
       this.loginCommonExceptionHandler('이메일 또는 비밀번호 누락');
     }
@@ -100,48 +84,32 @@ export class AuthenticateService {
       this.loginCommonExceptionHandler('비밀번호 불일치');
     }
 
-    const encryptedId: string | null = encryptUserId(loginUser!);
-
-    if (!encryptedId) {
-      logger.error(`인증 처리 중 사용자 고유 번호 암호화 처리 간 문제 발생`);
-
-      return Promise.reject(new HttpExceptionResponse(500, '인증 처리 중 서버 문제 발생'));
+    // 차단된 사용자 체크
+    if (loginUser!.blockState) {
+      this.loginCommonExceptionHandler('차단된 사용자');
     }
 
-    logger.info(`[login] encryptedId: ${encryptedId}`);
-    logger.info(`[login] session before save: ${JSON.stringify(request.session)}`);
+    // JWT 토큰 생성
+    const expiresIn = rememberMeStatus ? '30d' : '24h';
+    const token = generateJwtToken(loginUser!, expiresIn);
 
-    const sessionData = request.session as ExtendedSessionData;
-    sessionData.encryptedUserId = encryptedId;
-    request.session.cookie.maxAge = this.generateCookieMaxAge(rememberMeStatus);
+    logger.info(`[login] JWT 토큰 생성 완료 - 사용자 ID: ${loginUser!.id}`);
 
-    logger.info(`[login] session after save: ${JSON.stringify(request.session)}`);
-    logger.info(`[login] session after save cookie: ${JSON.stringify(request.session.cookie)}`);
-
-    return new Promise((resolve, reject) => {
-      request.session.save((error: any) => {
-        if (error) {
-          logger.error(`login session 저장 실패 - 실패 이유 ${error.message}`);
-
-          return reject(new HttpExceptionResponse(500, `로그인 실패`));
-        }
-
-        resolve(DefaultResponse.response(200, '로그인 성공'));
-      });
-    });
+    return DefaultResponse.responseWithData(200, '로그인 성공', { token });
   }
 
   /**
-   * 사용자의 세션을 제거하고 로그아웃을 처리합니다.
+   * 사용자의 로그아웃을 처리합니다.
    *
-   * @param {Request} request - Express 요청 객체
-   * @param {Response} response - Express 응답 객체
+   * JWT 기반 인증에서는 서버 측에서 토큰을 무효화할 수 없으므로,
+   * 클라이언트에서 토큰을 삭제하도록 안내합니다.
+   *
    * @returns {Promise<DefaultResponse<void>>} 로그아웃 처리 결과
    *
    * @description
-   * - 현재 세션을 `destroy`하여 세션 정보를 제거합니다.
-   * - 클라이언트 측 세션 쿠키(`connect.sid`)를 삭제합니다.
-   * - 에러 발생 시 500 상태 코드와 함께 처리 실패 메시지를 반환합니다.
+   * - JWT는 stateless이므로 서버에서 토큰을 무효화할 수 없습니다.
+   * - 클라이언트에서 토큰을 삭제하도록 안내합니다.
+   * - 향후 토큰 블랙리스트 기능을 추가할 수 있습니다.
    *
    * @example
    * // 클라이언트 요청 예시
@@ -153,52 +121,16 @@ export class AuthenticateService {
    *   "message": "로그아웃 성공"
    * }
    */
-  async logout(request: Request, response: Response): Promise<DefaultResponse<void>> {
+  async logout(): Promise<DefaultResponse<void>> {
     try {
-      logger.info(`[logout] 로그아웃 요청 - sessionId: ${request.session.id}`);
+      logger.info(`[logout] 로그아웃 요청 처리`);
 
-      return new Promise((resolve, reject) => {
-        request.session.destroy((error: any) => {
-          if (error) {
-            logger.error(`logout 실패 - 실패 이유 ${error.message}`);
-
-            return reject(new HttpExceptionResponse(500, `로그아웃 실패`));
-          }
-
-          response.clearCookie('connect.sid', {
-            path: '/',
-            httpOnly: true,
-            secure: process.env.NODE_ENV !== 'production' ? false : true,
-            sameSite: 'lax',
-          });
-
-          resolve(DefaultResponse.response(200, '로그아웃 성공'));
-        });
-      });
+      // JWT는 stateless이므로 서버에서 토큰을 무효화할 수 없음
+      // 클라이언트에서 토큰을 삭제하도록 안내
+      return DefaultResponse.response(200, '로그아웃 성공');
     } catch (error: any) {
       logger.error(`logout 실패 - 실패 이유 ${error.message}`);
-
       return DefaultResponse.response(500, '로그아웃 처리 실패');
-    }
-  }
-
-  /**
-   * 세션 쿠키의 만료 시간을 생성합니다.
-   *
-   * 'rememberMe' 상태에 따라 30일 또는 1일로 쿠키의 `maxAge` 값을 설정합니다.
-   *
-   * @param {boolean} rememberMeStatus - 자동 로그인 여부
-   * @returns {number} 쿠키 만료 시간 (밀리초 단위)
-   */
-  private generateCookieMaxAge(rememberMeStatus: boolean): number {
-    rememberMeStatus ??= false;
-
-    logger.info(`generateCookieMaxAge - rememberMeStatus: ${rememberMeStatus}`);
-
-    if (rememberMeStatus) {
-      return 1000 * 60 * 60 * 24 * 30;
-    } else {
-      return 1000 * 60 * 60 * 24;
     }
   }
 

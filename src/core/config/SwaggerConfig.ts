@@ -61,15 +61,17 @@ export const generateSwaggerSpec = (
       servers: [{ url: `${serverUrl}:${port}` }],
       security: [
         {
-          sessionCookie: [],
+          bearerAuth: [],
         },
       ],
       components: {
         securitySchemes: {
-          sessionCookie: {
-            type: 'apiKey',
-            in: 'cookie',
-            name: 'connect.sid',
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            description:
+              'JWT 토큰을 Authorization 헤더에 Bearer 형식으로 전달하세요.',
           },
         },
         schemas: {

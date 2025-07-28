@@ -1,10 +1,9 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import { UserService } from '../../../core/api/services/user/UserService';
 import { DefaultResponse } from '../../../core/constant/DefaultResponse';
 import { commonExceptionControllerResponseProcessor } from '../../../core/processor/CommonExceptionControllerResponseProcessor';
 import { validateRequest } from '../../../core/middlewares/ZodValidator';
 import { userWithdrawSchema } from '../../../core/schemas/zod/UserSchemas';
-import { findBySessionUserId } from '../../../core/utilities/Finder';
 
 /**
  * @swagger
@@ -99,21 +98,21 @@ export class UserController {
    *         description: 서버 오류
    */
   private async deleteUser(request: Request, response: Response) {
-    const user = await findBySessionUserId(request);
-
-    if (!user) {
-      return response.status(401).json(DefaultResponse.response(401, '로그인이 필요합니다.'));
+    if (!request.user) {
+      return response
+        .status(401)
+        .json(DefaultResponse.response(401, '로그인이 필요합니다.'));
     }
 
     try {
-      const result = await this.userService.deleteUser(user.id);
+      const result = await this.userService.deleteUser(request.user.id);
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        '회원 탈퇴 실패'
-      );
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(error, '회원 탈퇴 실패');
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 }

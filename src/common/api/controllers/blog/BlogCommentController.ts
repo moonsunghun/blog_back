@@ -17,12 +17,11 @@ import { BlogCommentCreateRequestDto } from '../../../../core/models/dtos/reques
 import { BlogCommentUpdateRequestDto } from '../../../../core/models/dtos/request/blog/comment/BlogCommentUpdateRequestDto';
 import { BlogCommentDeleteRequestDto } from '../../../../core/models/dtos/request/blog/comment/BlogCommentDeleteRuquestDto';
 import { User } from '../../../../core/models/entities/User';
-import { findBySessionUserId } from '../../../../core/utilities/Finder';
 /**
  * @swagger
  * tags:
  *   name: Blogs Comments
- *   description: 블로그 관련 게시글 댓글 API
+ *   description: 블로그 게시글에 대한 댓글 관련 API
  */
 export class BlogCommentController {
   public readonly router: Router;
@@ -125,26 +124,41 @@ export class BlogCommentController {
     try {
       const blogId: number = Number(request.params.blogId);
 
-      const user: User | null = await findBySessionUserId(request);
+      const user: User | null = request.user
+        ? ({
+            id: request.user.id,
+            email: request.user.email,
+            nickName: '', // 필요한 경우 데이터베이스에서 조회
+            password: '',
+            userType: request.user.role,
+            loginAttemptCount: 0,
+            blockState: false,
+            withdrawnDateTime: null,
+          } as User)
+        : null;
 
       const blogCommentRegisterDto = new BlogCommentCreateRequestDto({
         content: request.body.content,
         userId: user?.id,
       });
 
-      const result: DefaultResponse<number> = await this.blogCommentService.createBlogComment(
-        blogId,
-        blogCommentRegisterDto
-      );
+      const result: DefaultResponse<number> =
+        await this.blogCommentService.createBlogComment(
+          blogId,
+          blogCommentRegisterDto
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        '블로그 게시글에 대한 댓글 작성 실패'
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          '블로그 게시글에 대한 댓글 작성 실패'
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -195,26 +209,35 @@ export class BlogCommentController {
    *       500:
    *         description: "서버 내부 오류"
    */
-  private async blogCommentSearchListWithPaging(request: Request, response: Response) {
+  private async blogCommentSearchListWithPaging(
+    request: Request,
+    response: Response
+  ) {
     try {
-      const blogCommentListRequestDto: BlogCommentListRequestDto = new BlogCommentListRequestDto({
-        blogId: Number(request.params.blogId),
-        pageNumber: Number(request.query.pageNumber) || 1,
-        perPageSize: Number(request.query.perPagesize) || 10,
-        orderBy: request.query.orderBy as OrderBy,
-      });
+      const blogCommentListRequestDto: BlogCommentListRequestDto =
+        new BlogCommentListRequestDto({
+          blogId: Number(request.params.blogId),
+          pageNumber: Number(request.query.pageNumber) || 1,
+          perPageSize: Number(request.query.perPagesize) || 10,
+          orderBy: request.query.orderBy as OrderBy,
+        });
 
       const result: DefaultResponse<BlogCommentListResponseDto> =
-        await this.blogCommentService.blogCommentSearchListWithPaging(blogCommentListRequestDto);
+        await this.blogCommentService.blogCommentSearchListWithPaging(
+          blogCommentListRequestDto
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `${request.params.blogId} 블로그 게시글의 댓글 목록 조회 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `${request.params.blogId} 블로그 게시글의 댓글 목록 조회 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -282,18 +305,19 @@ export class BlogCommentController {
         content: request.body.content,
       });
 
-      const result: DefaultResponse<number> = await this.blogCommentService.blogCommentUpdate(
-        blogCommentUpdateRequestDto
-      );
+      const result: DefaultResponse<number> =
+        await this.blogCommentService.blogCommentUpdate(
+          blogCommentUpdateRequestDto
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `댓글 수정 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(error, `댓글 수정 실패`);
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -349,18 +373,19 @@ export class BlogCommentController {
         blogCommentId: Number(request.params.blogCommentId),
       });
 
-      const result: DefaultResponse<number> = await this.blogCommentService.deletedBlogComment(
-        blogCommentDeleteRequestDto
-      );
+      const result: DefaultResponse<number> =
+        await this.blogCommentService.deletedBlogComment(
+          blogCommentDeleteRequestDto
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `댓글 삭제 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(error, `댓글 삭제 실패`);
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 }

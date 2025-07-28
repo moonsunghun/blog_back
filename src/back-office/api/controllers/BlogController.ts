@@ -15,7 +15,6 @@ import { BlogCreateResponseDto } from '../../../core/models/dtos/response/blog/B
 import { BlogUpdateRequestDto } from '../../../core/models/dtos/request/blog/BlogUpdateRequestDto';
 import { BlogUpdateResponseDto } from '../../../core/models/dtos/response/blog/BlogUpdateResponseDto';
 import { translateTextToEnglish } from '../../../ai-service';
-import { findBySessionUserId } from '../../../core/utilities/Finder';
 import { User } from '../../../core/models/entities/User';
 /**
  * @swagger
@@ -39,7 +38,7 @@ export class BlogController {
       validateRequest({
         body: blogRegisterSchema,
       }),
-      this.createdBlog.bind(this)
+      this.createBlog.bind(this)
     );
 
     this.router.patch(
@@ -123,10 +122,22 @@ export class BlogController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  private async createdBlog(request: Request, response: Response) {
-    const user: User | null = await findBySessionUserId(request);
+  private async createBlog(request: Request, response: Response) {
     try {
-      const blogCreatedRequestDto = new BlogCreateRequestDto({
+      const user: User | null = request.user
+        ? ({
+            id: request.user.id,
+            email: request.user.email,
+            nickName: '', // 필요한 경우 데이터베이스에서 조회
+            password: '',
+            userType: request.user.role,
+            loginAttemptCount: 0,
+            blockState: false,
+            withdrawnDateTime: null,
+          } as User)
+        : null;
+
+      const blogCreateRequestDto = new BlogCreateRequestDto({
         userId: user?.id,
         title: request.body.title,
         preview: request.body.preview,
@@ -137,16 +148,19 @@ export class BlogController {
       });
 
       const result: DefaultResponse<BlogCreateResponseDto> =
-        await this.blogService.createBlog(blogCreatedRequestDto);
+        await this.blogService.createBlog(blogCreateRequestDto);
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `문의 게시글 작성 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          '블로그 게시글 작성 실패'
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -221,12 +235,12 @@ export class BlogController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `블로그글 수정 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(error, `블로그글 수정 실패`);
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -266,12 +280,15 @@ export class BlogController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        '블로그 게시글 삭제 실패'
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          '블로그 게시글 삭제 실패'
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 }

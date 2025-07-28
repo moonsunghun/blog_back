@@ -1,15 +1,1 @@
-import 'express-session';
-import { UserRole } from './core/types/Enum';
-
-declare module 'express-session' {
-  interface SessionData {
-    encryptedUserId?: string;
-    rememberMeStatus?: boolean;
-    user?: {
-      id: number;
-      username: string;
-      nickname: string;
-      role: UserRole;
-    };
-  }
-}
+// JWT 기반 인증을 위한 타입 정의는 JwtAuthenticationMiddleware.ts에서 처리됩니다.

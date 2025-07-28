@@ -26,7 +26,6 @@ import { InquiryUpdateResponseDto } from '../../../models/dtos/response/inquiry/
 import { ApplicationFileRepository } from '../../repositories/ApplicationFileRepository';
 import { fileCleanerAsync } from '../../../utilities/Cleaner';
 import { AdminInquiryAnswerStatusUpdateDto } from '../../../models/dtos/request/inquiry/AdminInquiryAnswerStatusUpdateDto';
-import { findBySessionUserId } from '../../../utilities/Finder';
 import { User } from '../../../models/entities/User';
 import { generatedGuestNickNameUuid } from '../../../utilities/Generater';
 import { validateGuestPasswordCookie } from '../../../utilities/Cookie';
@@ -48,13 +47,14 @@ import { JobType, UserRole } from '../../../types/Enum';
  * - 저장된 파일 정보는 응답 DTO에 요약 형태로 포함됩니다.
  */
 export class InquiryService {
-  private readonly inquiryRepository: InquiryRepository = new InquiryRepositoryImpl();
+  private readonly inquiryRepository: InquiryRepository =
+    new InquiryRepositoryImpl();
   private readonly applicationFileRepository: ApplicationFileRepository =
     new ApplicationFileRepositoryImpl();
 
-  private readonly inquiryQueryBuilderRepository = AppDataSource.getRepository(Inquiry).extend(
-    InquiryQueryBuilderRepository
-  );
+  private readonly inquiryQueryBuilderRepository = AppDataSource.getRepository(
+    Inquiry
+  ).extend(InquiryQueryBuilderRepository);
 
   /**
    * 문의 게시글을 생성하고 첨부 파일 정보를 함께 저장합니다.
@@ -69,7 +69,18 @@ export class InquiryService {
     inquiryCreatedRequestDto: InquiryCreateRequestDto,
     files: Express.Multer.File[]
   ): Promise<DefaultResponse<InquiryCreateResponseDto>> {
-    const user: User | null = await findBySessionUserId(inquiryCreatedRequestDto.userRequest);
+    const user: User | null = inquiryCreatedRequestDto.userRequest.user
+      ? ({
+          id: inquiryCreatedRequestDto.userRequest.user.id,
+          email: inquiryCreatedRequestDto.userRequest.user.email,
+          nickName: '', // 필요한 경우 데이터베이스에서 조회
+          password: '',
+          userType: inquiryCreatedRequestDto.userRequest.user.role,
+          loginAttemptCount: 0,
+          blockState: false,
+          withdrawnDateTime: null,
+        } as User)
+      : null;
 
     if (
       user ||
@@ -105,16 +116,18 @@ export class InquiryService {
         return applicationFile;
       });
 
-      const saveFileInformation = await this.applicationFileRepository.saveAll(applicationFiles);
+      const saveFileInformation =
+        await this.applicationFileRepository.saveAll(applicationFiles);
 
-      const savedFileResponseDtos: InquiryFileResponseDto[] = saveFileInformation.map(
-        (file) =>
-          new InquiryFileResponseDto({
-            id: file.id,
-            path: file.path,
-            originalName: file.originalName,
-          })
-      );
+      const savedFileResponseDtos: InquiryFileResponseDto[] =
+        saveFileInformation.map(
+          (file) =>
+            new InquiryFileResponseDto({
+              id: file.id,
+              path: file.path,
+              originalName: file.originalName,
+            })
+        );
 
       return DefaultResponse.responseWithData(
         201,
@@ -148,7 +161,8 @@ export class InquiryService {
         inquirySearchRequestDto.perPageSize,
         results[1],
         results[0].map(
-          (inquiry: Inquiry): InquiryListResponseDto => new InquiryListResponseDto(inquiry)
+          (inquiry: Inquiry): InquiryListResponseDto =>
+            new InquiryListResponseDto(inquiry)
         )
       )
     );
@@ -171,15 +185,28 @@ export class InquiryService {
     inquiryId: number,
     guestPassword: string
   ): Promise<DefaultResponse<boolean>> {
-    const inquiry: Inquiry | null = await this.inquiryRepository.findById(inquiryId);
+    const inquiry: Inquiry | null =
+      await this.inquiryRepository.findById(inquiryId);
 
-    if (!(inquiry?.guestPassword && (await checkPassword(guestPassword, inquiry.guestPassword)))) {
+    if (
+      !(
+        inquiry?.guestPassword &&
+        (await checkPassword(guestPassword, inquiry.guestPassword))
+      )
+    ) {
       return Promise.reject(
-        new HttpExceptionResponse(400, '문의 게시글 고유 번호 혹은 비밀번호 확인 필요')
+        new HttpExceptionResponse(
+          400,
+          '문의 게시글 고유 번호 혹은 비밀번호 확인 필요'
+        )
       );
     }
 
-    return DefaultResponse.responseWithData(200, '비회원 비밀번호 검증 성공', true);
+    return DefaultResponse.responseWithData(
+      200,
+      '비회원 비밀번호 검증 성공',
+      true
+    );
   }
 
   /**
@@ -228,11 +255,15 @@ export class InquiryService {
     if (!(await this.checkAuthorization(request, JobType.READ))) {
       logger.error(`접근 권한 없는 접근 발생`);
 
-      return Promise.reject(new HttpExceptionResponse(401, '본인이 작성한 글만 확인 가능'));
+      return Promise.reject(
+        new HttpExceptionResponse(401, '본인이 작성한 글만 확인 가능')
+      );
     }
 
     if (!inquiryDetailSearchRequestDto.processType) {
-      result = await this.getDetailInquiryWithFiles(inquiryDetailSearchRequestDto.inquiryId);
+      result = await this.getDetailInquiryWithFiles(
+        inquiryDetailSearchRequestDto.inquiryId
+      );
     } else {
       result = await this.getDetailInquiryWithFilesAndCommentReply(
         inquiryDetailSearchRequestDto.inquiryId
@@ -268,7 +299,9 @@ export class InquiryService {
     if (!(await this.checkAuthorization(request, JobType.UPDATE))) {
       logger.error(`접근 권한 없는 접근 발생`);
 
-      return Promise.reject(new HttpExceptionResponse(401, '본인이 작성한 글만 수정 가능'));
+      return Promise.reject(
+        new HttpExceptionResponse(401, '본인이 작성한 글만 수정 가능')
+      );
     }
 
     const oldInquiry: Inquiry = this.checkInquiry(
@@ -292,7 +325,9 @@ export class InquiryService {
         await this.createNewApplicationFile(
           files,
           newInquiry,
-          this.deleteOldApplicationFile(inquiryUpdateRequestDto.deleteInquiryFileIds)
+          this.deleteOldApplicationFile(
+            inquiryUpdateRequestDto.deleteInquiryFileIds
+          )
         )
       )
     );
@@ -321,16 +356,24 @@ export class InquiryService {
       id: number;
     }>
   > {
-    return DefaultResponse.responseWithData(200, '관리자 문의 게시글 답변 상태 수정 성공', {
-      id: (
-        await this.inquiryRepository.update(
-          this.checkInquiry(
-            await this.inquiryRepository.findById(adminInquiryAnswerStatusUpdateDto.inquiryId)
-          ),
-          adminInquiryAnswerStatusUpdateDto.toEntity(adminInquiryAnswerStatusUpdateDto)
-        )
-      ).id,
-    });
+    return DefaultResponse.responseWithData(
+      200,
+      '관리자 문의 게시글 답변 상태 수정 성공',
+      {
+        id: (
+          await this.inquiryRepository.update(
+            this.checkInquiry(
+              await this.inquiryRepository.findById(
+                adminInquiryAnswerStatusUpdateDto.inquiryId
+              )
+            ),
+            adminInquiryAnswerStatusUpdateDto.toEntity(
+              adminInquiryAnswerStatusUpdateDto
+            )
+          )
+        ).id,
+      }
+    );
   }
 
   /**
@@ -367,12 +410,19 @@ export class InquiryService {
       if (!(await this.checkAuthorization(request, JobType.DELETE))) {
         logger.error(`접근 권한 없는 접근 발생`);
 
-        return Promise.reject(new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능'));
+        return Promise.reject(
+          new HttpExceptionResponse(401, '본인이 작성한 글만 삭제 가능')
+        );
       }
 
-      const inquiry: Inquiry = this.checkInquiry(await this.inquiryRepository.findById(inquiryId));
-      const deleteInquiryFileIds: number[] = await this.deleteInquiryFiles(inquiry);
-      const deleteByInquiryId: number = await this.inquiryRepository.deleteById(inquiry.id);
+      const inquiry: Inquiry = this.checkInquiry(
+        await this.inquiryRepository.findById(inquiryId)
+      );
+      const deleteInquiryFileIds: number[] =
+        await this.deleteInquiryFiles(inquiry);
+      const deleteByInquiryId: number = await this.inquiryRepository.deleteById(
+        inquiry.id
+      );
 
       return DefaultResponse.responseWithData(200, '문의 게시글 삭제 성공', {
         id: deleteByInquiryId,
@@ -382,11 +432,15 @@ export class InquiryService {
       });
     } catch (error: any) {
       if (error instanceof HttpExceptionResponse) {
-        logger.error(`문의 게시글 삭제 간 문제 발생 - 문제 내용: ${error.message}`);
+        logger.error(
+          `문의 게시글 삭제 간 문제 발생 - 문제 내용: ${error.message}`
+        );
 
         throw new HttpExceptionResponse(error.statusCode, error.message);
       } else {
-        logger.error(`문의 게시글 삭제 간 문제 발생 - 문제 내용: ${error.message}`);
+        logger.error(
+          `문의 게시글 삭제 간 문제 발생 - 문제 내용: ${error.message}`
+        );
 
         throw new HttpExceptionResponse(500, '내부 서버 문제 발생');
       }
@@ -400,7 +454,9 @@ export class InquiryService {
    * @returns InquiryDetailResponseDto
    * @throws HttpExceptionResponse - 문의 데이터를 찾을 수 없는 경우
    */
-  private async getDetailInquiryWithFiles(inquiryId: number): Promise<InquiryDetailResponseDto> {
+  private async getDetailInquiryWithFiles(
+    inquiryId: number
+  ): Promise<InquiryDetailResponseDto> {
     const inquiry: Inquiry = this.checkInquiry(
       await this.inquiryRepository.findInquiryWithUserByInquiryId(inquiryId)
     );
@@ -421,7 +477,9 @@ export class InquiryService {
     inquiryId: number
   ): Promise<InquiryDetailResponseDto> {
     const inquiry: Inquiry = this.checkInquiry(
-      await this.inquiryQueryBuilderRepository.getDetailInquiryWithCommentAndCommentReply(inquiryId)
+      await this.inquiryQueryBuilderRepository.getDetailInquiryWithCommentAndCommentReply(
+        inquiryId
+      )
     );
 
     return new InquiryDetailResponseDto(
@@ -465,11 +523,16 @@ export class InquiryService {
     inquiryFileIds: number[] | undefined
   ): Promise<number[] | undefined> {
     if (inquiryFileIds?.length) {
-      for (const file of await this.applicationFileRepository.findByIds(inquiryFileIds)) {
+      for (const file of await this.applicationFileRepository.findByIds(
+        inquiryFileIds
+      )) {
         try {
           if (!(await fileCleanerAsync(file.path))) {
             return Promise.reject(
-              new HttpExceptionResponse(500, `문의 게시글 수정 간 기존 파일 삭제 실패`)
+              new HttpExceptionResponse(
+                500,
+                `문의 게시글 수정 간 기존 파일 삭제 실패`
+              )
             );
           }
           await unlink(path.resolve(file.path));
@@ -479,7 +542,10 @@ export class InquiryService {
           );
 
           return Promise.reject(
-            new HttpExceptionResponse(500, `문의 게시글 수정 간 기존 파일 삭제 실패`)
+            new HttpExceptionResponse(
+              500,
+              `문의 게시글 수정 간 기존 파일 삭제 실패`
+            )
           );
         }
       }
@@ -566,7 +632,9 @@ export class InquiryService {
       await this.applicationFileRepository.findByRelatedId(inquiry.id);
 
     if (!deleteTargetApplicationFiles.length) {
-      logger.info(`${inquiry.id} 번 문의 게시글의 포함된 파일이 존재 하지 않아 삭제 작업 없음.`);
+      logger.info(
+        `${inquiry.id} 번 문의 게시글의 포함된 파일이 존재 하지 않아 삭제 작업 없음.`
+      );
 
       return [];
     }
@@ -583,9 +651,8 @@ export class InquiryService {
         );
       }
 
-      const deletedInquiryFileId: number | null = await this.applicationFileRepository.deleteById(
-        inquiryFile.id
-      );
+      const deletedInquiryFileId: number | null =
+        await this.applicationFileRepository.deleteById(inquiryFile.id);
 
       if (!deletedInquiryFileId) {
         return Promise.reject(
@@ -632,7 +699,9 @@ export class InquiryService {
     guestNickName ??= generatedGuestNickNameUuid();
 
     if (!inquiryRepository) {
-      throw new Error(`[createInquiry - checkDuplicateGuestNickNameUuid] 매개 변수값 확인 필요`);
+      throw new Error(
+        `[createInquiry - checkDuplicateGuestNickNameUuid] 매개 변수값 확인 필요`
+      );
     }
 
     let loopCount: number = 0;
@@ -640,7 +709,9 @@ export class InquiryService {
     const triedNicknames = new Set<string>();
 
     while (loopCount < 1000) {
-      logger.info(`[createInquiry - checkDuplicateGuestNickNameUuid] ${loopCount} 번째 검증 시작`);
+      logger.info(
+        `[createInquiry - checkDuplicateGuestNickNameUuid] ${loopCount} 번째 검증 시작`
+      );
 
       if (triedNicknames.has(guestNickName)) {
         guestNickName = generatedGuestNickNameUuid();
@@ -654,7 +725,8 @@ export class InquiryService {
 
       triedNicknames.add(guestNickName);
 
-      const inquiry: Inquiry | null = await inquiryRepository.findByGuestNickName(guestNickName);
+      const inquiry: Inquiry | null =
+        await inquiryRepository.findByGuestNickName(guestNickName);
 
       if (!inquiry) {
         return true;
@@ -693,11 +765,16 @@ export class InquiryService {
    * const isAuthorized = await checkAuthorization(req, JobType.UPDATE);
    * if (!isAuthorized) throw new ForbiddenException();
    */
-  async checkAuthorization(request: Request, jobType: JobType): Promise<boolean | undefined> {
+  async checkAuthorization(
+    request: Request,
+    jobType: JobType
+  ): Promise<boolean | undefined> {
     try {
       logger.info(`[InquiryService - checkAuthorization] 인가 검증 시작`);
 
-      const inquiry: Inquiry | null = await this.getInquiry(Number(request.params.inquiryId));
+      const inquiry: Inquiry | null = await this.getInquiry(
+        Number(request.params.inquiryId)
+      );
 
       const requestUser: User | null = await this.getRequestUser(request);
 
@@ -707,25 +784,39 @@ export class InquiryService {
 
       logger.info(`[InquiryService - checkAuthorization] 회원 인가 검증 시작`);
 
-      const { requestUserUserWriteInquiryAccessStatus, requestUserGuestWriteInquiryAccessStatus } =
-        this.analyzeWriter(inquiry);
+      const {
+        requestUserUserWriteInquiryAccessStatus,
+        requestUserGuestWriteInquiryAccessStatus,
+      } = this.analyzeWriter(inquiry);
 
       if (requestUserUserWriteInquiryAccessStatus) {
-        logger.info(`[InquiryService - checkAuthorization] 작성자가 회원인 게시글 접근`);
+        logger.info(
+          `[InquiryService - checkAuthorization] 작성자가 회원인 게시글 접근`
+        );
 
         if (requestUser!.userType !== UserRole.ADMINISTRATOR) {
           return this.userInquiryAccessValidator(requestUser!, inquiry);
         }
 
-        return this.administratorInquiryAccessStatusValidator(requestUser!, inquiry, jobType);
+        return this.administratorInquiryAccessStatusValidator(
+          requestUser!,
+          inquiry,
+          jobType
+        );
       }
 
       if (requestUserGuestWriteInquiryAccessStatus) {
-        this.requestUserAccessNonUserWriteValidator(requestUser!, inquiry, jobType);
+        this.requestUserAccessNonUserWriteValidator(
+          requestUser!,
+          inquiry,
+          jobType
+        );
       }
 
       return Promise.reject(
-        new Error(`[checkAuthorization] 작성자 정보가 없음 (회원/비회원 모두 NULL)`)
+        new Error(
+          `[checkAuthorization] 작성자 정보가 없음 (회원/비회원 모두 NULL)`
+        )
       );
     } catch (error: any) {
       logger.error(
@@ -757,7 +848,9 @@ export class InquiryService {
     guestPasswordCookie: Promise<string>,
     inquiry: Inquiry
   ): Promise<boolean> {
-    logger.info(`[InquiryService - validateGuestPassword] 비회원 비밀번호 검증 시작`);
+    logger.info(
+      `[InquiryService - validateGuestPassword] 비회원 비밀번호 검증 시작`
+    );
 
     if (
       !(await checkPassword(
@@ -765,66 +858,102 @@ export class InquiryService {
         inquiry.guestPassword!
       ))
     ) {
-      logger.info(`[InquiryService - validateGuestPassword] 비회원 비밀번호 검증 완료`);
+      logger.info(
+        `[InquiryService - validateGuestPassword] 비회원 비밀번호 검증 완료`
+      );
 
       throw new HttpExceptionResponse(400, `비회원 암호 확인 필요`);
     }
 
-    logger.info(`[InquiryService - validateGuestPassword] 비회원 비밀번호 검증 완료`);
+    logger.info(
+      `[InquiryService - validateGuestPassword] 비회원 비밀번호 검증 완료`
+    );
 
     return true;
   }
 
   private async getInquiry(inquiryId: number): Promise<Inquiry> {
-    const inquiry: Inquiry | null = await this.inquiryRepository.findInquiryWithUserByInquiryId(
-      Number(inquiryId)
-    );
+    const inquiry: Inquiry | null =
+      await this.inquiryRepository.findInquiryWithUserByInquiryId(
+        Number(inquiryId)
+      );
 
     if (!inquiry) {
-      return Promise.reject(new HttpExceptionResponse(404, `존재하지 않는 문의 게시글`));
+      return Promise.reject(
+        new HttpExceptionResponse(404, `존재하지 않는 문의 게시글`)
+      );
     }
 
     return inquiry;
   }
 
   private async getRequestUser(request: Request): Promise<User | null> {
-    logger.info(`[InquiryService - getRequestUser] 요청자 분석 로직 동작`);
-
-    return await findBySessionUserId(request);
+    return request.user
+      ? ({
+          id: request.user.id,
+          email: request.user.email,
+          nickName: '', // 필요한 경우 데이터베이스에서 조회
+          password: '',
+          userType: request.user.role,
+          loginAttemptCount: 0,
+          blockState: false,
+          withdrawnDateTime: null,
+        } as User)
+      : null;
   }
 
   private async verificationOfNonUser(request: Request, inquiry: Inquiry) {
     logger.info(`[InquiryService - checkAuthorization] 비회원 인가 검증 시작`);
 
-    const guestPasswordCookie: Promise<string> = validateGuestPasswordCookie(request, inquiry.id);
+    const guestPasswordCookie: Promise<string> = validateGuestPasswordCookie(
+      request,
+      inquiry.id
+    );
 
     if (await this.validateGuestPassword(guestPasswordCookie, inquiry)) {
-      logger.info(`[InquiryService - checkAuthorization] 비회원 인가 검증 완료`);
+      logger.info(
+        `[InquiryService - checkAuthorization] 비회원 인가 검증 완료`
+      );
       return true;
     }
 
-    return Promise.reject(new HttpExceptionResponse(401, '비회원 비밀번호가 일치하지 않습니다.'));
+    return Promise.reject(
+      new HttpExceptionResponse(401, '비회원 비밀번호가 일치하지 않습니다.')
+    );
   }
 
   private analyzeWriter(inquiry: Inquiry): {
     requestUserUserWriteInquiryAccessStatus: boolean;
     requestUserGuestWriteInquiryAccessStatus: boolean;
   } {
-    logger.info(`[InquiryService - analyzeWriter] 문의 관련 글 작성자 권한 분석 시작`);
+    logger.info(
+      `[InquiryService - analyzeWriter] 문의 관련 글 작성자 권한 분석 시작`
+    );
 
-    const requestUserUserWriteInquiryAccessStatus: boolean = inquiry.user?.id != null;
-    const requestUserGuestWriteInquiryAccessStatus: boolean = inquiry.guestNickName != null;
+    const requestUserUserWriteInquiryAccessStatus: boolean =
+      inquiry.user?.id != null;
+    const requestUserGuestWriteInquiryAccessStatus: boolean =
+      inquiry.guestNickName != null;
 
-    logger.info(`[InquiryService - analyzeWriter] 문의 관련 글 작성자 권한 분석 완료`);
+    logger.info(
+      `[InquiryService - analyzeWriter] 문의 관련 글 작성자 권한 분석 완료`
+    );
 
     return {
-      requestUserUserWriteInquiryAccessStatus: requestUserUserWriteInquiryAccessStatus,
-      requestUserGuestWriteInquiryAccessStatus: requestUserGuestWriteInquiryAccessStatus,
+      requestUserUserWriteInquiryAccessStatus:
+        requestUserUserWriteInquiryAccessStatus,
+      requestUserGuestWriteInquiryAccessStatus:
+        requestUserGuestWriteInquiryAccessStatus,
     };
   }
 
-  private userInquiryAccessValidator(requestUser: User, inquiry: Inquiry): boolean {
-    logger.info(`[InquiryService - userInquiryAccessValidator] 일반 회원 인가 검증 시작`);
+  private userInquiryAccessValidator(
+    requestUser: User,
+    inquiry: Inquiry
+  ): boolean {
+    logger.info(
+      `[InquiryService - userInquiryAccessValidator] 일반 회원 인가 검증 시작`
+    );
 
     if (requestUser.id !== inquiry.user!.id) {
       logger.error(
@@ -833,7 +962,9 @@ export class InquiryService {
       throw new HttpExceptionResponse(401, '자신이 작성한 글만 접근 가능');
     }
 
-    logger.info(`[InquiryService - userInquiryAccessValidator] 일반 회원 인가 검증 완료`);
+    logger.info(
+      `[InquiryService - userInquiryAccessValidator] 일반 회원 인가 검증 완료`
+    );
 
     return true;
   }
@@ -865,7 +996,10 @@ export class InquiryService {
       `[InquiryService - administratorInquiryAccessStatusValidator] 관리자 타인 글 수정/삭제 시도`
     );
     return Promise.reject(
-      new HttpExceptionResponse(401, '관리자여도 본인이 작성한 글 외에 수정, 삭제 불가')
+      new HttpExceptionResponse(
+        401,
+        '관리자여도 본인이 작성한 글 외에 수정, 삭제 불가'
+      )
     );
   }
 
@@ -878,7 +1012,10 @@ export class InquiryService {
       `[InquiryService - requestUserAccessNonUserWriteValidator] 작성자가 비회원인 게시글 접근 권한 분석 시작`
     );
 
-    if (requestUser.userType === UserRole.ADMINISTRATOR && jobType === JobType.READ) {
+    if (
+      requestUser.userType === UserRole.ADMINISTRATOR &&
+      jobType === JobType.READ
+    ) {
       logger.info(
         `[InquiryService - requestUserAccessNonUserWriteValidator] 관리자 비회원 글 조회 허용`
       );
@@ -888,6 +1025,8 @@ export class InquiryService {
     logger.error(
       `[InquiryService - requestUserAccessNonUserWriteValidator] 회원 또는 관리자 비회원 글 접근 차단`
     );
-    return Promise.reject(new HttpExceptionResponse(401, '비회원 글에는 접근할 수 없습니다.'));
+    return Promise.reject(
+      new HttpExceptionResponse(401, '비회원 글에는 접근할 수 없습니다.')
+    );
   }
 }

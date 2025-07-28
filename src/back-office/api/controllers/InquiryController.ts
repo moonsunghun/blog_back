@@ -1,7 +1,10 @@
 import { Request, Response, Router } from 'express';
 import { InquiryService } from '../../../core/api/services/inquiry/InquiryService';
 import { validateRequest } from '../../../core/middlewares/ZodValidator';
-import { inquiryAnswerStatus, inquiryIdSchema } from '../../../core/schemas/zod/InquirySchemas';
+import {
+  inquiryAnswerStatus,
+  inquiryIdSchema,
+} from '../../../core/schemas/zod/InquirySchemas';
 import { DefaultResponse } from '../../../core/constant/DefaultResponse';
 import { commonExceptionControllerResponseProcessor } from '../../../core/processor/CommonExceptionControllerResponseProcessor';
 import { AdminInquiryAnswerStatusUpdateDto } from '../../../core/models/dtos/request/inquiry/AdminInquiryAnswerStatusUpdateDto';
@@ -45,7 +48,7 @@ export class InquiryController {
    *     tags:
    *       - Inquiries
    *     security:
-   *       - sessionCookie: []
+   *       - bearerAuth: []
    *     parameters:
    *       - name: inquiryId
    *         in: path
@@ -89,12 +92,16 @@ export class InquiryController {
    *       500:
    *         description: "서버 내부 오류"
    */
-  private async adminInquiryAnswerStatusUpdate(request: Request, response: Response) {
+  private async adminInquiryAnswerStatusUpdate(
+    request: Request,
+    response: Response
+  ) {
     try {
-      const adminInquiryAnswerStatusUpdateDto = new AdminInquiryAnswerStatusUpdateDto({
-        inquiryId: Number(request.params.inquiryId),
-        answerStatus: request.body.answerStatus,
-      });
+      const adminInquiryAnswerStatusUpdateDto =
+        new AdminInquiryAnswerStatusUpdateDto({
+          inquiryId: Number(request.params.inquiryId),
+          answerStatus: request.body.answerStatus,
+        });
 
       const result: DefaultResponse<{
         id: number;
@@ -104,12 +111,15 @@ export class InquiryController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `관리자 문의 게시글 답변 상태 수정 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `관리자 문의 게시글 답변 상태 수정 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 }

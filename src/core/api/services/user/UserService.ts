@@ -15,9 +15,9 @@ import { UserNickNameUpdateRequestDto } from '../../../models/dtos/request/user/
  * 사용자 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
  */
 export class UserService {
-  private readonly userQueryBuilderRepository = AppDataSource.getRepository(User).extend(
-    UserQueryBuilderRepository
-  );
+  private readonly userQueryBuilderRepository = AppDataSource.getRepository(
+    User
+  ).extend(UserQueryBuilderRepository);
 
   /**
    * 마이페이지 정보를 조회합니다.
@@ -25,20 +25,34 @@ export class UserService {
    * @param {number} userId - 조회할 사용자의 ID
    * @returns {Promise<DefaultResponse<UserProfileResponseDto>>} 사용자의 이메일과 별명 정보
    */
-  async getUserMyPageInfo(userId: number): Promise<DefaultResponse<UserProfileResponseDto>> {
+  async getUserMyPageInfo(
+    userId: number
+  ): Promise<DefaultResponse<UserProfileResponseDto>> {
     const userRepository = AppDataSource.getRepository(User);
 
     if (!userId) {
-      return Promise.reject(new HttpExceptionResponse(400, '로그인을 다시 시도해 주세요.'));
+      return Promise.reject(
+        new HttpExceptionResponse(400, '로그인을 다시 시도해 주세요.')
+      );
     }
 
     const user = await userRepository.findOneBy({ id: userId });
     if (!user) {
-      return Promise.reject(new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.')
+      );
     }
 
-    const responseDto = new UserProfileResponseDto(user.email, user.nickName);
-    return DefaultResponse.responseWithData(200, '마이페이지 정보 조회 성공', responseDto);
+    const responseDto = new UserProfileResponseDto(
+      user.email,
+      user.nickName,
+      user.userType
+    );
+    return DefaultResponse.responseWithData(
+      200,
+      '마이페이지 정보 조회 성공',
+      responseDto
+    );
   }
 
   /**
@@ -56,20 +70,28 @@ export class UserService {
     const userRepository = AppDataSource.getRepository(User);
 
     if (!userId) {
-      return Promise.reject(new HttpExceptionResponse(400, '잘못된 사용자 ID입니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(400, '잘못된 사용자 ID입니다.')
+      );
     }
 
     const user = await userRepository.findOneBy({ id: userId });
     if (!user) {
-      return Promise.reject(new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.')
+      );
     }
 
     const { nickName } = requestDto;
 
     // 별명 중복 체크
-    const nicknameExists = await userRepository.findOneBy({ nickName: nickName });
+    const nicknameExists = await userRepository.findOneBy({
+      nickName: nickName,
+    });
     if (nicknameExists && nicknameExists.id !== userId) {
-      return Promise.reject(new HttpExceptionResponse(409, '이미 사용 중인 별명입니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(409, '이미 사용 중인 별명입니다.')
+      );
     }
 
     user.nickName = nickName;
@@ -93,26 +115,38 @@ export class UserService {
     const userRepository = AppDataSource.getRepository(User);
 
     if (!userId) {
-      return Promise.reject(new HttpExceptionResponse(400, '잘못된 사용자 ID입니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(400, '잘못된 사용자 ID입니다.')
+      );
     }
 
     const user = await userRepository.findOneBy({ id: userId });
     if (!user) {
-      return Promise.reject(new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.')
+      );
     }
 
     const { currentPassword, newPassword } = requestDto;
 
     // 현재 비밀번호 확인
-    const isPasswordCorrect = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordCorrect = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
     if (!isPasswordCorrect) {
-      return Promise.reject(new HttpExceptionResponse(400, '현재 비밀번호가 일치하지 않습니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(400, '현재 비밀번호가 일치하지 않습니다.')
+      );
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     await userRepository.save(user);
 
-    return DefaultResponse.response(200, '비밀번호가 성공적으로 수정되었습니다.');
+    return DefaultResponse.response(
+      200,
+      '비밀번호가 성공적으로 수정되었습니다.'
+    );
   }
 
   /**
@@ -127,18 +161,26 @@ export class UserService {
     const userRepository = AppDataSource.getRepository(User);
 
     if (!userId) {
-      return Promise.reject(new HttpExceptionResponse(500, `잘못된 사용자 ID 입니다.`));
+      return Promise.reject(
+        new HttpExceptionResponse(500, `잘못된 사용자 ID 입니다.`)
+      );
     }
 
     const user = await userRepository.findOneBy({ id: userId });
     if (!user) {
-      return Promise.reject(new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.'));
+      return Promise.reject(
+        new HttpExceptionResponse(404, '사용자를 찾을 수 없습니다.')
+      );
     }
 
     // 사용자 계정 삭제
     await userRepository.remove(user);
 
-    return DefaultResponse.responseWithData(200, '회원 탈퇴가 완료되었습니다.', {});
+    return DefaultResponse.responseWithData(
+      200,
+      '회원 탈퇴가 완료되었습니다.',
+      {}
+    );
   }
 
   /**
@@ -151,7 +193,9 @@ export class UserService {
     userSearchRequestDto: UserSearchRequestDto
   ): Promise<DefaultResponse<UserListResponseDto>> {
     const results: [User[], number] =
-      await this.userQueryBuilderRepository.dynamicQuerySearchAndPagingByDto(userSearchRequestDto);
+      await this.userQueryBuilderRepository.dynamicQuerySearchAndPagingByDto(
+        userSearchRequestDto
+      );
 
     return DefaultResponse.responseWithPaginationAndData(
       200,
@@ -160,7 +204,9 @@ export class UserService {
         userSearchRequestDto.pageNumber,
         userSearchRequestDto.perPageSize,
         results[1],
-        results[0].map((user: User): UserListResponseDto => new UserListResponseDto(user))
+        results[0].map(
+          (user: User): UserListResponseDto => new UserListResponseDto(user)
+        )
       )
     );
   }

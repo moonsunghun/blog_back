@@ -26,7 +26,7 @@ import { AppDataSource } from '../core/config/DatabaseConfig';
 import { generateSwaggerSpec } from '../core/config/SwaggerConfig';
 import { logger } from '../core/utilities/Logger';
 import 'reflect-metadata';
-import { sessionMiddleware } from '../core/middlewares/SessionMiddleware';
+import { authenticateJwt } from '../core/middlewares/JwtAuthenticationMiddleware';
 import { initializeEncryptCommonKeyAndIV } from '../core/utilities/EncyprtKeyManager';
 import { corsOptions } from '../core/utilities/Secret';
 
@@ -37,7 +37,7 @@ const serverEnvironment = process.env.NODE_ENV ?? 'local';
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(sessionMiddleware);
+app.use(authenticateJwt);
 
 /**
  * Swagger 문서를 자동으로 생성하고 Express에 연결합니다.
@@ -61,7 +61,9 @@ AppDataSource.initialize()
     logger.info('Data Source (데이터 소스) 가 초기화 되었어요.');
   })
   .catch((error) => {
-    logger.error(`Data Source (데이터 소스) 초기화 실패하였어요. \n 실패 이유: ${error.message}`);
+    logger.error(
+      `Data Source (데이터 소스) 초기화 실패하였어요. \n 실패 이유: ${error.message}`
+    );
   });
 
 initializeEncryptCommonKeyAndIV(serverName, serverEnvironment)
@@ -79,7 +81,9 @@ app.use(cookieParser());
  * @route GET /health
  * @returns { status: 'OK' }
  */
-app.get('/health', (request: Request, response: Response) => response.json({ status: 'OK' }));
+app.get('/health', (request: Request, response: Response) =>
+  response.json({ status: 'OK' })
+);
 
 /**
  * Express 애플리케이션 인스턴스를 export 합니다.

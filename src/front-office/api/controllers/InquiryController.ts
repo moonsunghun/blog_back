@@ -72,7 +72,7 @@ export class InquiryController {
    *     tags:
    *       - Inquiries
    *     security:
-   *       - sessionCookie: []  # 회원 인증 시 사용되는 세션 쿠키
+   *       - bearerAuth: []  # 회원 인증 시 사용되는 JWT 토큰
    *     requestBody:
    *       required: true
    *       content:
@@ -177,7 +177,7 @@ export class InquiryController {
    *     tags:
    *       - Inquiries
    *     security:
-   *       - sessionCookie: []  # 회원 세션 쿠키
+   *       - bearerAuth: []  # 회원 JWT 토큰
    *     parameters:
    *       - name: inquiryId
    *         in: path
@@ -286,7 +286,7 @@ export class InquiryController {
    *     tags:
    *       - Inquiries
    *     security:
-   *       - sessionCookie: []  # 회원 세션 인증
+   *       - bearerAuth: []  # 회원 JWT 인증
    *     parameters:
    *       - name: inquiryId
    *         in: path

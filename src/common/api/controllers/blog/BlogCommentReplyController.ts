@@ -13,7 +13,6 @@ import { BlogCommentReplyCreateDto } from '../../../../core/models/dtos/request/
 import { BlogCommentReplyUpdateDto } from '../../../../core/models/dtos/request/blog/reply/BlogCommentReplyUpdateDto';
 import { BlogCommentReplyDeleteRequestDto } from '../../../../core/models/dtos/request/blog/reply/BlogCommentReplyDeleteRequestDto';
 import { validateRequest } from '../../../../core/middlewares/ZodValidator';
-import { findBySessionUserId } from '../../../../core/utilities/Finder';
 import { User } from '../../../../core/models/entities/User';
 /**
  * @swagger
@@ -116,7 +115,10 @@ export class BlogCommentReplyController {
    *       500:
    *         description: "서버 내부 오류"
    */
-  private async blogCommentReplySearchListWithPaging(request: Request, response: Response) {
+  private async blogCommentReplySearchListWithPaging(
+    request: Request,
+    response: Response
+  ) {
     try {
       const blogCommentReplyListRequestDto: BlogCommentReplyListRequestDto =
         new BlogCommentReplyListRequestDto({
@@ -133,12 +135,15 @@ export class BlogCommentReplyController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `서버 내부 오류: ${request.params.blogCommentId} 블로그 게시글의 댓글 답글 목록 조회 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `서버 내부 오류: ${request.params.blogCommentId} 블로그 게시글의 댓글 답글 목록 조회 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -195,7 +200,18 @@ export class BlogCommentReplyController {
   private async createBlogCommentReply(request: Request, response: Response) {
     try {
       const blogCommentId: number = Number(request.params.blogCommentId);
-      const user: User | null = await findBySessionUserId(request);
+      const user: User | null = request.user
+        ? ({
+            id: request.user.id,
+            email: request.user.email,
+            nickName: '', // 필요한 경우 데이터베이스에서 조회
+            password: '',
+            userType: request.user.role,
+            loginAttemptCount: 0,
+            blockState: false,
+            withdrawnDateTime: null,
+          } as User)
+        : null;
 
       const blogCommentReplyCreateDto = new BlogCommentReplyCreateDto({
         content: request.body.content,
@@ -210,12 +226,15 @@ export class BlogCommentReplyController {
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        '서버 내부 오류: 블로그 게시글에 대한 댓글의 답글 작성 실패'
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          '서버 내부 오류: 블로그 게시글에 대한 댓글의 답글 작성 실패'
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -286,16 +305,21 @@ export class BlogCommentReplyController {
       });
 
       const result: DefaultResponse<number> =
-        await this.blogCommentReplyService.blogCommentReplyUpdate(blogCommentReplyUpdateRequestDto);
+        await this.blogCommentReplyService.blogCommentReplyUpdate(
+          blogCommentReplyUpdateRequestDto
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `서버 내부 오류: 답글 수정 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `서버 내부 오류: 답글 수정 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 
@@ -346,22 +370,28 @@ export class BlogCommentReplyController {
    */
   private async blogCommentReplyDelete(request: Request, response: Response) {
     try {
-      const blogCommentReplyDeleteRequestDto = new BlogCommentReplyDeleteRequestDto({
-        blogCommentId: Number(request.params.blogCommentId),
-        blogCommentReplyId: Number(request.params.blogCommentReplyId),
-      });
+      const blogCommentReplyDeleteRequestDto =
+        new BlogCommentReplyDeleteRequestDto({
+          blogCommentId: Number(request.params.blogCommentId),
+          blogCommentReplyId: Number(request.params.blogCommentReplyId),
+        });
 
       const result: DefaultResponse<number> =
-        await this.blogCommentReplyService.blogCommentReplyDelete(blogCommentReplyDeleteRequestDto);
+        await this.blogCommentReplyService.blogCommentReplyDelete(
+          blogCommentReplyDeleteRequestDto
+        );
 
       return response.status(result.statusCode).json(result);
     } catch (error: any) {
-      const { statusCode, errorMessage } = commonExceptionControllerResponseProcessor(
-        error,
-        `서버 내부 오류: 답글 삭제 실패`
-      );
+      const { statusCode, errorMessage } =
+        commonExceptionControllerResponseProcessor(
+          error,
+          `서버 내부 오류: 답글 삭제 실패`
+        );
 
-      return response.status(statusCode).json(DefaultResponse.response(statusCode, errorMessage));
+      return response
+        .status(statusCode)
+        .json(DefaultResponse.response(statusCode, errorMessage));
     }
   }
 }

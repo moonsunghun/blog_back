@@ -16,7 +16,6 @@ import { Page } from '../../../constant/Page';
 import { InquiryCommentReplyCreateDto } from '../../../models/dtos/request/inquiry/reply/InquiryCommentReplyCreateDto';
 import { InquiryCommentReplyUpdateDto } from '../../../models/dtos/request/inquiry/reply/InquiryCommentReplyUpdateDto';
 import { InquiryCommentReplyDeleteRequestDto } from '../../../models/dtos/request/inquiry/reply/InquiryCommentReplyDeleteRequestDto';
-import { findBySessionUserId } from '../../../utilities/Finder';
 import { generatedGuestNickNameUuid } from '../../../utilities/Generater';
 import { User } from '../../../models/entities/User';
 
@@ -39,9 +38,10 @@ export class InquiryCommentReplyService {
   private readonly inquiryCommentReplyRepository: InquiryCommentReplyRepository =
     new InquiryCommentReplyRepositoryImpl();
 
-  private readonly inquiryCommentReplyQueryBuilderRepository = AppDataSource.getRepository(
-    InquiryCommentReply
-  ).extend(InquiryCommentReplyQueryBuilderRepository);
+  private readonly inquiryCommentReplyQueryBuilderRepository =
+    AppDataSource.getRepository(InquiryCommentReply).extend(
+      InquiryCommentReplyQueryBuilderRepository
+    );
 
   /**
    * 특정 댓글에 대한 답글을 등록합니다.
@@ -57,9 +57,19 @@ export class InquiryCommentReplyService {
     inquiryCommentId: number,
     inquiryCommentReplyCreateRequestDto: InquiryCommentReplyCreateDto
   ): Promise<DefaultResponse<number>> {
-    const user: User | null = await findBySessionUserId(
-      inquiryCommentReplyCreateRequestDto.userRequest
-    );
+    const user: User | null = inquiryCommentReplyCreateRequestDto.userRequest
+      .user
+      ? ({
+          id: inquiryCommentReplyCreateRequestDto.userRequest.user.id,
+          email: inquiryCommentReplyCreateRequestDto.userRequest.user.email,
+          nickName: '', // 필요한 경우 데이터베이스에서 조회
+          password: '',
+          userType: inquiryCommentReplyCreateRequestDto.userRequest.user.role,
+          loginAttemptCount: 0,
+          blockState: false,
+          withdrawnDateTime: null,
+        } as User)
+      : null;
 
     if (
       user ||
@@ -113,7 +123,9 @@ export class InquiryCommentReplyService {
         inquiryCommentReplyListRequestDto.perPageSize,
         results[1],
         results[0].map(
-          (inquiryCommentReply: InquiryCommentReply): InquiryCommentReplyListResponseDto =>
+          (
+            inquiryCommentReply: InquiryCommentReply
+          ): InquiryCommentReplyListResponseDto =>
             new InquiryCommentReplyListResponseDto(inquiryCommentReply)
         )
       )
@@ -152,12 +164,13 @@ export class InquiryCommentReplyService {
       );
     }
 
-    const newInquiryCommentReplyId: number = await this.inquiryCommentReplyRepository.save(
-      inquiryCommentReplyUpdateRequestDto.toEntity(
-        oldInquiryCommentReply,
-        inquiryCommentReplyUpdateRequestDto
-      )
-    );
+    const newInquiryCommentReplyId: number =
+      await this.inquiryCommentReplyRepository.save(
+        inquiryCommentReplyUpdateRequestDto.toEntity(
+          oldInquiryCommentReply,
+          inquiryCommentReplyUpdateRequestDto
+        )
+      );
 
     return DefaultResponse.responseWithData(
       200,
@@ -202,7 +215,10 @@ export class InquiryCommentReplyService {
 
     if (!inquiryCommentReply) {
       return Promise.reject(
-        new HttpExceptionResponse(404, '삭제 대상 답글을 데이터 베이스에서 찾을 수 없는 문제 발생')
+        new HttpExceptionResponse(
+          404,
+          '삭제 대상 답글을 데이터 베이스에서 찾을 수 없는 문제 발생'
+        )
       );
     }
 
@@ -231,7 +247,9 @@ export class InquiryCommentReplyService {
    * @returns 문의 게시글 댓글 객체 또는 null (댓글글을 찾을 수 없는 경우).
    * @throws HttpExceptionResponse 문의 게시글의 댓글을 찾을 수 없는 경우.
    */
-  private async inquiryCommentCheckInDatabase(inquiryCommentId: number): Promise<InquiryComment> {
+  private async inquiryCommentCheckInDatabase(
+    inquiryCommentId: number
+  ): Promise<InquiryComment> {
     const inquiryComment: InquiryComment | null =
       await this.inquiryCommentRepository.findById(inquiryCommentId);
 

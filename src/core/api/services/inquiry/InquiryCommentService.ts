@@ -1,34 +1,21 @@
 import { Request } from 'express';
 import { AppDataSource } from '../../../config/DatabaseConfig';
 import { InquiryComment } from '../../../models/entities/InquiryComment';
-import {
-  InquiryCommentQueryBuilderRepository,
-} from '../../repositories/query-builder/InquiryCommentQueryBuilderRepository';
-import {
-  InquiryCommentCreateRequestDto,
-} from '../../../models/dtos/request/inquiry/comment/InquiryCommentCreateRequestDto';
+import { InquiryCommentQueryBuilderRepository } from '../../repositories/query-builder/InquiryCommentQueryBuilderRepository';
+import { InquiryCommentCreateRequestDto } from '../../../models/dtos/request/inquiry/comment/InquiryCommentCreateRequestDto';
 import { DefaultResponse } from '../../../constant/DefaultResponse';
-import {
-  InquiryCommentListRequestDto,
-} from '../../../models/dtos/request/inquiry/comment/InquiryCommentListRequestDto';
-import {
-  InquiryCommentListResponseDto,
-} from '../../../models/dtos/response/inquiry/comment/InquiryCommentListResponseDto';
+import { InquiryCommentListRequestDto } from '../../../models/dtos/request/inquiry/comment/InquiryCommentListRequestDto';
+import { InquiryCommentListResponseDto } from '../../../models/dtos/response/inquiry/comment/InquiryCommentListResponseDto';
 import { Page } from '../../../constant/Page';
-import {
-  InquiryCommentUpdateRequestDto,
-} from '../../../models/dtos/request/inquiry/comment/InquiryCommentUpdateRequestDto';
+import { InquiryCommentUpdateRequestDto } from '../../../models/dtos/request/inquiry/comment/InquiryCommentUpdateRequestDto';
 import { HttpExceptionResponse } from '../../exception/HttpExceptionResponse';
-import {
-  InquiryCommentDeleteRequestDto,
-} from '../../../models/dtos/request/inquiry/comment/InquiryCommentDeleteRequestDto';
+import { InquiryCommentDeleteRequestDto } from '../../../models/dtos/request/inquiry/comment/InquiryCommentDeleteRequestDto';
 import { logger } from '../../../utilities/Logger';
 import { Inquiry } from '../../../models/entities/Inquiry';
 import { InquiryRepository } from '../../repositories/inquiry/InquiryRepository';
 import { InquiryRepositoryImpl } from '../../repositories/implements/inquiry/InquiryRepositoryImpl';
 import { InquiryCommentRepository } from '../../repositories/inquiry/InquiryCommentRepository';
 import { InquiryCommentRepositoryImpl } from '../../repositories/implements/inquiry/InquiryCommentRepositoryImpl';
-import { findBySessionUserId } from '../../../utilities/Finder';
 import { generatedGuestNickNameUuid } from '../../../utilities/Generater';
 import { User } from '../../../models/entities/User';
 
@@ -46,13 +33,15 @@ import { User } from '../../../models/entities/User';
  * - 성공 시 응답은 DefaultResponse 형식으로 ID를 포함합니다.
  */
 export class InquiryCommentService {
-  private readonly inquiryRepository: InquiryRepository = new InquiryRepositoryImpl();
+  private readonly inquiryRepository: InquiryRepository =
+    new InquiryRepositoryImpl();
   private readonly inquiryCommentRepository: InquiryCommentRepository =
     new InquiryCommentRepositoryImpl();
 
-  private readonly inquiryCommentQueryBuilderRepository = AppDataSource.getRepository(
-    InquiryComment
-  ).extend(InquiryCommentQueryBuilderRepository);
+  private readonly inquiryCommentQueryBuilderRepository =
+    AppDataSource.getRepository(InquiryComment).extend(
+      InquiryCommentQueryBuilderRepository
+    );
 
   /**
    * 댓글 작성 처리
@@ -67,7 +56,18 @@ export class InquiryCommentService {
     inquiryId: number,
     inquiryCommentCreateRequestDto: InquiryCommentCreateRequestDto
   ): Promise<DefaultResponse<number>> {
-    const user: User | null = await findBySessionUserId(inquiryCommentCreateRequestDto.userRequest);
+    const user: User | null = inquiryCommentCreateRequestDto.userRequest.user
+      ? ({
+          id: inquiryCommentCreateRequestDto.userRequest.user.id,
+          email: inquiryCommentCreateRequestDto.userRequest.user.email,
+          nickName: '', // 필요한 경우 데이터베이스에서 조회
+          password: '',
+          userType: inquiryCommentCreateRequestDto.userRequest.user.role,
+          loginAttemptCount: 0,
+          blockState: false,
+          withdrawnDateTime: null,
+        } as User)
+      : null;
 
     if (
       user ||
@@ -107,7 +107,9 @@ export class InquiryCommentService {
   ): Promise<DefaultResponse<InquiryCommentListResponseDto>> {
     const results: [InquiryComment[], number] =
       await this.inquiryCommentQueryBuilderRepository.dynamicQueryPagingByInquiry(
-        await this.inquiryCheckInDatabase(inquiryCommentListRequestDto.inquiryId),
+        await this.inquiryCheckInDatabase(
+          inquiryCommentListRequestDto.inquiryId
+        ),
         inquiryCommentListRequestDto
       );
 
@@ -143,19 +145,30 @@ export class InquiryCommentService {
   ): Promise<DefaultResponse<number>> {
     const oldInquiryComment: InquiryComment | null =
       await this.inquiryCommentRepository.findByInquiryAndInquiryCommentId(
-        (await this.inquiryCheckInDatabase(inquiryCommentUpdateRequestDto.inquiryId)).id,
+        (
+          await this.inquiryCheckInDatabase(
+            inquiryCommentUpdateRequestDto.inquiryId
+          )
+        ).id,
         inquiryCommentUpdateRequestDto.inquiryCommentId
       );
 
     if (!oldInquiryComment) {
       return Promise.reject(
-        new HttpExceptionResponse(404, '수정 대상 댓글을 데이터 베이스에서 찾을 수 없는 문제 발생')
+        new HttpExceptionResponse(
+          404,
+          '수정 대상 댓글을 데이터 베이스에서 찾을 수 없는 문제 발생'
+        )
       );
     }
 
-    const newInquiryCommentId: number = await this.inquiryCommentRepository.save(
-      inquiryCommentUpdateRequestDto.toEntity(oldInquiryComment, inquiryCommentUpdateRequestDto)
-    );
+    const newInquiryCommentId: number =
+      await this.inquiryCommentRepository.save(
+        inquiryCommentUpdateRequestDto.toEntity(
+          oldInquiryComment,
+          inquiryCommentUpdateRequestDto
+        )
+      );
 
     return DefaultResponse.responseWithData(
       200,
@@ -181,13 +194,20 @@ export class InquiryCommentService {
   ): Promise<DefaultResponse<number>> {
     const inquiryComment: InquiryComment | null =
       await this.inquiryCommentRepository.findByInquiryAndInquiryCommentId(
-        (await this.inquiryCheckInDatabase(inquiryCommentDeleteRequestDto.inquiryId)).id,
+        (
+          await this.inquiryCheckInDatabase(
+            inquiryCommentDeleteRequestDto.inquiryId
+          )
+        ).id,
         inquiryCommentDeleteRequestDto.inquiryCommentId
       );
 
     if (!inquiryComment) {
       return Promise.reject(
-        new HttpExceptionResponse(404, '삭제 대상 댓글을 데이터 베이스에서 찾을 수 없는 문제 발생')
+        new HttpExceptionResponse(
+          404,
+          '삭제 대상 댓글을 데이터 베이스에서 찾을 수 없는 문제 발생'
+        )
       );
     }
 
@@ -196,7 +216,9 @@ export class InquiryCommentService {
         200,
         '문의 게시글 댓글 삭제 성공',
         await this.inquiryCommentRegisterStatusChecker(
-          await this.inquiryCommentRepository.delectByInquiryCommentId(inquiryComment.id),
+          await this.inquiryCommentRepository.delectByInquiryCommentId(
+            inquiryComment.id
+          ),
           '문의 게시글 댓글 삭제 실패: 데이터베이스 문제 발생'
         )
       );
@@ -215,7 +237,8 @@ export class InquiryCommentService {
    * @throws HttpExceptionResponse 문의 게시글을 찾을 수 없는 경우.
    */
   private async inquiryCheckInDatabase(inquiryId: number): Promise<Inquiry> {
-    const inquiry: Inquiry | null = await this.inquiryRepository.findById(inquiryId);
+    const inquiry: Inquiry | null =
+      await this.inquiryRepository.findById(inquiryId);
 
     if (!inquiry) {
       return Promise.reject(
