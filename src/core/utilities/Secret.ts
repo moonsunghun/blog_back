@@ -49,7 +49,12 @@ export const corsOptions = {
 
     logger.info(`추가 허용 도메인 검사`);
 
-    const allowedDomains = ['http://127.0.0.1', 'https://localhost', 'https://127.0.0.1'];
+    const allowedDomains = [
+      'http://127.0.0.1',
+      'https://localhost',
+      'https://127.0.0.1',
+      'https://frontend-lac-iota-10.vercel.app',
+    ];
 
     if (allowedDomains.includes(origin)) {
       logger.info(`[CORS] 허용된 도메인 목록에 포함된 origin 허용: ${origin}`);

@@ -51,7 +51,9 @@ export const sessionMiddleware: RequestHandler = session({
   cookie: {
     path: '/',
     httpOnly: true,
-    secure: process.env.NODE_ENV !== 'production' ? false : true,
-    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.shmoon.site' : undefined,
+    maxAge: 24 * 60 * 60 * 1000, // 24시간
   },
 }) as any;
