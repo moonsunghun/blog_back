@@ -105,12 +105,11 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // production에서는 true로 설정
+      secure: false, // 일단 false로 설정하여 HTTP에서도 작동하도록
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 크로스 도메인을 위해 none으로 설정
-      domain:
-        process.env.NODE_ENV === 'production' ? '.shmoon.site' : undefined, // 쿠키 도메인 설정
+      sameSite: 'none', // 크로스 도메인을 위해 none으로 설정
+      // domain 설정은 일단 제외 (문제 발생 시 추가)
     },
   }) as any
 );
