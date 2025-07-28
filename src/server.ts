@@ -105,7 +105,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // 일단 false로 설정하여 HTTP에서도 작동하도록
+      secure: true, // HTTPS 환경이므로 true로 설정
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
       sameSite: 'none', // 크로스 도메인을 위해 none으로 설정
